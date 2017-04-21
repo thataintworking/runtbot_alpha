@@ -17,6 +17,8 @@ def main():
     left_motor.stop()
     right_motor.stop()
 
+    sleep(1)
+
     # move backward for 3 seconds
     left_motor.backward(0.5)
     right_motor.backward(0.5)
@@ -24,12 +26,16 @@ def main():
     left_motor.stop()
     right_motor.stop()
 
+    sleep(1)
+
     # turn left for 3 seconds
     left_motor.backward(0.5)
     right_motor.forward(0.5)
     sleep(3)
     left_motor.stop()
     right_motor.stop()
+
+    sleep(1)
 
     # turn right for 3 seconds
     left_motor.forward(0.5)
