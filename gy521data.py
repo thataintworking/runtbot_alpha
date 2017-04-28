@@ -2,7 +2,7 @@
 # Author: Ron Smith
 # Copyright ©2017 That Ain't Working, All Rights Reserved
 
-import smbus
+from smbus2 import SMBus
 import math
 
 # Power management registers
@@ -43,7 +43,7 @@ def get_x_rotation(x, y, z):
     return math.degrees(radians)
 
 
-bus = smbus.SMBus(0)  # or bus = smbus.SMBus(1) for Revision 2 boards
+bus = SMBus(1)
 address = 0x68  # This is the address value read via the i2cdetect command
 
 # Now wake the 6050 up as it starts in sleep mode
