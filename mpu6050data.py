@@ -5,6 +5,7 @@
 from MotionSensor import MPU6050
 
 mpu = MPU6050()
+mpu.open()
 
 print()
 
