@@ -14,8 +14,8 @@ def callback(pin):
 
 
 GPIO.setmode(GPIO.BCM)
-GPIO.setup(16, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-GPIO.add_event_detect(16, GPIO.RISING, callback=callback)
+GPIO.setup(20, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+GPIO.add_event_detect(20, GPIO.RISING, callback=callback)
 
 sd_event.wait()
 
