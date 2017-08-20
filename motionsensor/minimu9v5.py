@@ -14,12 +14,13 @@ class MinIMU9v5(MotionSensor):
     temp_addr = 0x6b
 
     def __init__(self, bus=None):
-        super().__init__(bus,
-                         gyro=(self.gyro_addr, 0x22, 0x24, 0x26),
-                         accl=(self.accl_addr, 0x28, 0x2a, 0x2c),
-                         magn=(self.magn_addr, 0x28, 0x2a, 0x2c),
-                         temp=(self.temp_addr, 0x20))
-
+        super().__init__(
+            bus,
+            gyro=(self.gyro_addr, 0x22, 0x24, 0x26),
+            accl=(self.accl_addr, 0x28, 0x2a, 0x2c),
+            magn=(self.magn_addr, 0x28, 0x2a, 0x2c),
+            temp=(self.temp_addr, 0x20)
+        )
         self._write_byte(self.gyro_addr, 0x10, 0b10100111)   # CTRL1_XL
         self._write_byte(self.gyro_addr, 0x11, 0x00)         # CTRL2_G
         self._write_byte(self.gyro_addr, 0x14, 0b01100100)   # CTRL5_C
