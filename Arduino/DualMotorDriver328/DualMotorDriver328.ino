@@ -58,7 +58,7 @@ struct WheelData {
     byte target_speed;
     byte measured_speed;
     word pwm;
-}
+};
 
 struct RegisterValues {
     byte device_id;
@@ -93,9 +93,10 @@ class Wheel {
   public:
 
     Wheel(const char* n, int ena_pin, int fwd_pin, int bwd_pin, int enc_pin) :
-            name(n), data.direction(STOP), data.target_speed(0), data.measured_speed(0), data.pwm(0), prev_dir(STOP),
-            enable_pin(ena_pin), forward_pin(fwd_pin), backward_pin(bwd_pin), encoder_pin(enc_pin),
-            pid(&measured_speed, &pwm, &target_speed, 2, 5, 1, P_ON_M, DIRECT), clicks(0), last_clicks(0),
+            name(n), direction(STOP), target_speed(0), measured_speed(0), pwm(0), prev_dir(STOP), 
+            enable_pin(ena_pin), forward_pin(fwd_pin), backward_pin(bwd_pin), encoder_pin(enc_pin), 
+            clicks(0), last_clicks(0),
+            pid(&measured_speed, &pwm, &target_speed, 2, 5, 1, P_ON_M, DIRECT)
     {
         Serial.print(name);
         Serial.println(": initializing pins");
@@ -266,8 +267,8 @@ void i2c_receive(int n) {
 
 void i2c_request() {
     registers.vals.left = left_wheel->regs();
-    registers.vals.right = right_wheel->regs()
-    Write.send(registers.data, sizeof(RegisterValues))
+    registers.vals.right = right_wheel->regs();
+    Wire.write(registers.data, sizeof(RegisterValues));
 }
 
 

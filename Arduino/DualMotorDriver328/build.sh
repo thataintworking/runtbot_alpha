@@ -3,5 +3,5 @@
 arduino \
     --$1 \
     --board arduino:avr:uno \
-    --port /dev/ttyACM1 \
+    --port /dev/ttyACM0 \
     DualMotorDriver328.ino
