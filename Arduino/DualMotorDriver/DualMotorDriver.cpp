@@ -23,6 +23,7 @@
  *      0x0B    RO      Right Wheel Current PWM output LSB
  ***/
 
+#include <stdio.h>
 #include <Wire.h>
 #include <PID_v1.h>
 
@@ -31,12 +32,12 @@
 
 #define LW_ENA_PIN  7
 #define LW_FWD_PIN  6
-#define LW_BWD_PIN  5
-#define LW_ENC_PIN  2
+#define LW_REV_PIN  5
+#define LW_ENC_PIN  3
 #define RW_ENA_PIN  12
 #define RW_FWD_PIN  11
-#define RW_BWD_PIN  10
-#define RW_ENC_PIN  3
+#define RW_REV_PIN  10
+#define RW_ENC_PIN  2
 
 #define LW_DIR_REG    0x02
 #define LW_SPEED_REG  0x03
@@ -45,7 +46,7 @@
 
 #define STOP     0
 #define FORWARD  1
-#define BACKWARD 2
+#define REVERSE 2
 #define LEFT     0
 #define RIGHT    1
 
@@ -67,8 +68,10 @@ struct RegisterValues {
     WheelData right;
 };
 
+const int rvsize = sizeof(RegisterValues);
+
 union Registers {
-    byte data[sizeof(RegisterValues)];
+    byte data[rvsize];
     RegisterValues vals;
 } registers;
 
@@ -77,36 +80,37 @@ class Wheel {
   private:
 
     const char* name;
-    byte direction;
+    volatile byte direction;
     byte prev_dir;
-    double target_speed;
-    double measured_speed;
-    double pwm;
+    volatile double target_speed;
+    volatile double measured_speed;
+    volatile double pwm;
+    double last_pwm;
     volatile unsigned long clicks;
     unsigned long last_clicks;
     PID pid;
     int enable_pin;
     int forward_pin;
-    int backward_pin;
+    int reverse_pin;
     int encoder_pin;
 
   public:
 
-    Wheel(const char* n, int ena_pin, int fwd_pin, int bwd_pin, int enc_pin) :
+    Wheel(const char* n, int ena_pin, int fwd_pin, int rev_pin, int enc_pin) :
             name(n), direction(STOP), target_speed(0), measured_speed(0), pwm(0), prev_dir(STOP), 
-            enable_pin(ena_pin), forward_pin(fwd_pin), backward_pin(bwd_pin), encoder_pin(enc_pin), 
-            clicks(0), last_clicks(0),
+            enable_pin(ena_pin), forward_pin(fwd_pin), reverse_pin(rev_pin), encoder_pin(enc_pin), 
+            clicks(0), last_clicks(0), last_pwm(0),
             pid(&measured_speed, &pwm, &target_speed, 2, 5, 1, P_ON_M, DIRECT)
     {
         Serial.print(name);
         Serial.println(": initializing pins");
         pinMode(enable_pin, OUTPUT);
         pinMode(forward_pin, OUTPUT);
-        pinMode(backward_pin, OUTPUT);
+        pinMode(reverse_pin, OUTPUT);
         pinMode(encoder_pin, INPUT);
         digitalWrite(enable_pin, LOW);
         analogWrite(forward_pin, 0);
-        analogWrite(backward_pin, 0);
+        analogWrite(reverse_pin, 0);
     }
                 
     void encoder_isr() { clicks++; }
@@ -122,39 +126,43 @@ class Wheel {
         }
     }
 
-    void change_direction(byte d) {
-        Serial.print(name);
+void change_direction(byte d, boolean use_serial=false) {
+        if (use_serial) Serial.print(name);
         if (d >= 0 && d <= 2) {
-            Serial.print(": changing direction to ");
-            Serial.println(d == 0 ? "STOP" : (d == 1 ? "FORWARD" : "BACKWARD"));
+            if (use_serial) {
+                Serial.print(": changing direction to ");
+                Serial.println(d == 0 ? "STOP" : (d == 1 ? "FORWARD" : "REVERSE"));
+            }
             prev_dir = direction;
             direction = d;
-        } else {
+        } else if (use_serial) {
             Serial.print(": invalid value for change direction: ");
             Serial.println(d);
         }
     }
 
-    void change_speed(byte s) {
-        Serial.print(name);
+    void change_speed(byte s, boolean use_serial=false) {
+        if (use_serial) Serial.print(name);
         if (s >= 0 && s <= 255) {
-            Serial.print(": changing speed to ");
-            Serial.println(s);
+            if (use_serial) {
+                Serial.print(": changing speed to ");
+                Serial.println(s);
+            }
             target_speed = s;
-        } else {
+        } else if (use_serial) {
             Serial.print(": invalid value for change speed: ");
             Serial.println(s);
         }
     }
     
-    void stop() {
-        Serial.print(name);
-        Serial.println(": stopping");
-        direction = STOP;
+    void stop(boolean use_serial=false) {
+        if (use_serial) {
+            Serial.print(name);
+            Serial.println(": stopping");
+        }
         digitalWrite(enable_pin, LOW);
         analogWrite(forward_pin, 0);
-        analogWrite(backward_pin, 0);
-        prev_dir = STOP;
+        analogWrite(reverse_pin, 0);
     }
 
     WheelData regs() {
@@ -168,21 +176,37 @@ class Wheel {
     }
     
     void loop() {
-        if (prev_dir != direction) {
-            if (prev_dir != STOP) stop();
-        }
-        if (direction == STOP) {
-            stop();
+        Serial.print(name);
+        Serial.println(": Begin loop.");
+        if (direction == STOP && prev_dir != STOP) {
+            Serial.print(name);
+            Serial.println(": Direction changed to stop. Stopping.");
+            stop(true);
         } else {
+            if (prev_dir != direction && prev_dir != STOP) {
+                Serial.print(name);
+                Serial.print(": Direction changed to ");
+                Serial.print(direction == FORWARD ? "FORWARD" : "REVERSE");
+                Serial.println(". Stopping.");
+                stop(); 
+            }
             pid.Compute();
+            if (pwm != last_pwm) {
+                Serial.print(name);
+                Serial.print(": Computed PWM value changed: ");
+                Serial.println(pwm);
+                last_pwm = pwm;
+            }
             if (direction == FORWARD) {
-                analogWrite(backward_pin, 0);
+                analogWrite(reverse_pin, 0);
                 analogWrite(forward_pin, pwm);
             } else {
                 analogWrite(forward_pin, 0);
-                analogWrite(backward_pin, pwm);
+                analogWrite(reverse_pin, pwm);
             }
+            digitalWrite(enable_pin, HIGH);
         }
+        prev_dir = direction;
     }
 };
 
@@ -190,14 +214,18 @@ Wheel* left_wheel;
 Wheel* right_wheel;
 
 unsigned long last_millis;
+volatile int request_register;
+byte i2creqbuf[rvsize+1];
+
 
 void setup() {
     Serial.begin(9600);
 
     Serial.println("Initialize global variables");
+    request_register = 0;
     last_millis = millis();
-    left_wheel = new Wheel("Left Wheel", LW_ENA_PIN, LW_FWD_PIN, LW_BWD_PIN, LW_ENC_PIN);
-    right_wheel = new Wheel("Right Wheel", LW_ENA_PIN, LW_FWD_PIN, LW_BWD_PIN, LW_ENC_PIN);
+    left_wheel = new Wheel("Left Wheel", LW_ENA_PIN, LW_FWD_PIN, LW_REV_PIN, LW_ENC_PIN);
+    right_wheel = new Wheel("Right Wheel", LW_ENA_PIN, LW_FWD_PIN, LW_REV_PIN, LW_ENC_PIN);
     registers.vals.device_id = DEVICE_ID;
     registers.vals.software_verion = SOFTWARE_VERSION;
 
@@ -228,59 +256,59 @@ void stop_all_motors() {
 }
 
 
+void serial_print_hex(byte b) {
+    char hexbuf[5];
+    sprintf(hexbuf, "%02X ", b);
+    Serial.print(hexbuf);
+}
+
+
 void i2c_receive(int n) {
-    Serial.print("I2C receiving ");
-    Serial.print(n);
-    Serial.println(" bytes");
-    if (n >= 2) {
+    // NOTE: This is an interrupt handler. Do not user Serial in this function.
+    if (n == 1) {
+        request_register = Wire.read();
+    } else if (n >= 2) {
         int r = Wire.read();
         int v = Wire.read();
         switch (r) {
             case LW_DIR_REG:
-                Serial.print("Received left wheel direction change: ");
-                Serial.println(v);
                 left_wheel->change_direction(v);
                 break;
             case LW_SPEED_REG:
-                Serial.print("Received left wheel speed change: ");
-                Serial.println(v);
                 left_wheel->change_speed(v);
                 break;
             case RW_DIR_REG:
-                Serial.print("Received right wheel direction change: ");
-                Serial.println(v);
                 right_wheel->change_direction(v);
                 break;
             case RW_SPEED_REG:
-                Serial.print("Received right wheel speed change: ");
-                Serial.println(v);
                 right_wheel->change_speed(v);
                 break;
-            default:
-                Serial.print("Cannot update register ");
-                Serial.println(r);
         }
     }
     while (Wire.available()) Wire.read();   // throw away any extra data
 }
 
-
 void i2c_request() {
+    // NOTE: This is an interrupt handler. Do not user Serial in this function.
     registers.vals.left = left_wheel->regs();
     registers.vals.right = right_wheel->regs();
-    Wire.write(registers.data, sizeof(RegisterValues));
+    if (request_register >= 0 && request_register < rvsize) {
+        Wire.write(registers.data + request_register, rvsize - request_register);
+    } else {
+        Wire.write(-1);
+    }
 }
 
 
 void lw_encoder_isr() {
     // attachInterrupt won't let you pass an object's method as the ISR
-    //Serial.println("Left Encoder");
+    // NOTE: This is an interrupt handler. Do not user Serial in this function.
     left_wheel->encoder_isr();
 }
 
 
 void rw_encoder_isr() {
     // attachInterrupt won't let you pass an object's method as the ISR
-    //Serial.println("Right Encoder");
+    // NOTE: This is an interrupt handler. Do not user Serial in this function.
     right_wheel->encoder_isr();
 }
