@@ -86,6 +86,7 @@ class Wheel {
     volatile double measured_speed;
     volatile double pwm;
     double last_pwm;
+    double last_target_speed;
     volatile unsigned long clicks;
     unsigned long last_clicks;
     PID pid;
@@ -99,7 +100,7 @@ class Wheel {
     Wheel(const char* n, int ena_pin, int fwd_pin, int rev_pin, int enc_pin) :
             name(n), direction(STOP), target_speed(0), measured_speed(0), pwm(0), prev_dir(STOP), 
             enable_pin(ena_pin), forward_pin(fwd_pin), reverse_pin(rev_pin), encoder_pin(enc_pin), 
-            clicks(0), last_clicks(0), last_pwm(0),
+            clicks(0), last_clicks(0), last_pwm(0), last_target_speed(0),
             pid(&measured_speed, &pwm, &target_speed, 2, 5, 1, P_ON_M, DIRECT)
     {
         Serial.print(name);
@@ -126,40 +127,18 @@ class Wheel {
         }
     }
 
-void change_direction(byte d, boolean use_serial=false) {
-        if (use_serial) Serial.print(name);
+    void change_direction(byte d) {
         if (d >= 0 && d <= 2) {
-            if (use_serial) {
-                Serial.print(": changing direction to ");
-                Serial.println(d == 0 ? "STOP" : (d == 1 ? "FORWARD" : "REVERSE"));
-            }
             prev_dir = direction;
             direction = d;
-        } else if (use_serial) {
-            Serial.print(": invalid value for change direction: ");
-            Serial.println(d);
         }
     }
 
-    void change_speed(byte s, boolean use_serial=false) {
-        if (use_serial) Serial.print(name);
-        if (s >= 0 && s <= 255) {
-            if (use_serial) {
-                Serial.print(": changing speed to ");
-                Serial.println(s);
-            }
-            target_speed = s;
-        } else if (use_serial) {
-            Serial.print(": invalid value for change speed: ");
-            Serial.println(s);
-        }
+    void change_speed(byte s) {
+        target_speed = s;
     }
     
-    void stop(boolean use_serial=false) {
-        if (use_serial) {
-            Serial.print(name);
-            Serial.println(": stopping");
-        }
+    void stop() {
         digitalWrite(enable_pin, LOW);
         analogWrite(forward_pin, 0);
         analogWrite(reverse_pin, 0);
@@ -176,19 +155,25 @@ void change_direction(byte d, boolean use_serial=false) {
     }
     
     void loop() {
-        Serial.print(name);
-        Serial.println(": Begin loop.");
-        if (direction == STOP && prev_dir != STOP) {
+        if (target_speed != last_target_speed) {
             Serial.print(name);
-            Serial.println(": Direction changed to stop. Stopping.");
-            stop(true);
+            Serial.print(": target speed changed to ");
+            Serial.println(target_speed);
+            last_target_speed = target_speed;
+        }
+        if (direction == STOP) {
+            if (prev_dir != STOP) {
+                Serial.print(name);
+                Serial.println(": Direction changed to stop. Stopping.");
+                stop();
+            }
         } else {
             if (prev_dir != direction && prev_dir != STOP) {
                 Serial.print(name);
                 Serial.print(": Direction changed to ");
                 Serial.print(direction == FORWARD ? "FORWARD" : "REVERSE");
                 Serial.println(". Stopping.");
-                stop(); 
+                stop();
             }
             pid.Compute();
             if (pwm != last_pwm) {
@@ -199,10 +184,10 @@ void change_direction(byte d, boolean use_serial=false) {
             }
             if (direction == FORWARD) {
                 analogWrite(reverse_pin, 0);
-                analogWrite(forward_pin, pwm);
+                analogWrite(forward_pin, (int)pwm);
             } else {
                 analogWrite(forward_pin, 0);
-                analogWrite(reverse_pin, pwm);
+                analogWrite(reverse_pin, (int)pwm);
             }
             digitalWrite(enable_pin, HIGH);
         }
@@ -214,7 +199,7 @@ Wheel* left_wheel;
 Wheel* right_wheel;
 
 unsigned long last_millis;
-volatile int request_register;
+volatile byte request_register;
 byte i2creqbuf[rvsize+1];
 
 
@@ -268,8 +253,8 @@ void i2c_receive(int n) {
     if (n == 1) {
         request_register = Wire.read();
     } else if (n >= 2) {
-        int r = Wire.read();
-        int v = Wire.read();
+        byte r = Wire.read();
+        byte v = Wire.read();
         switch (r) {
             case LW_DIR_REG:
                 left_wheel->change_direction(v);
