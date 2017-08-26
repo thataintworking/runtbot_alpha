@@ -27,36 +27,20 @@
  *      0x0B    RO      Right Wheel Current PWM output LSB
  ***/
 
-#include <stdio.h>
-#include <Wire.h>
+#include "DualMotorDriver.h"
 #include "Wheel.h"
+#include <Wire.h>
 
-#define I2C_ADDR   0x10
-#define I2C_NUM_REGS 16
 
-#define LW_ENA_PIN  7
-#define LW_FWD_PIN  6
-#define LW_REV_PIN  5
-#define LW_ENC_PIN  3
-#define RW_ENA_PIN  12
-#define RW_FWD_PIN  11
-#define RW_REV_PIN  10
-#define RW_ENC_PIN  2
+volatile unsigned long lw_clicks;
+volatile unsigned long rw_clicks;
+volatile byte read_register;
+volatile byte write_register;
+volatile byte write_value;
 
-#define LW_DIR_REG    0x02
-#define LW_SPEED_REG  0x03
-#define RW_DIR_REG    0x07
-#define RW_SPEED_REG  0x08
-
-#define STOP     0
-#define FORWARD  1
-#define REVERSE 2
-#define LEFT     0
-#define RIGHT    1
-
-#define DEVICE_ID 77
-#define SOFTWARE_VERSION 1
-#define REG_SIZE 12
+unsigned long last_millis;
+Wheel* left_wheel;
+Wheel* right_wheel;
 
 struct RegisterValues {
     byte device_id;
@@ -73,21 +57,49 @@ union Registers {
 } registers;
 
 
-Wheel* left_wheel;
-Wheel* right_wheel;
+void i2c_receive(int n) {
+    // NOTE: This is an interrupt handler. Do not user Serial in this function.
+    read_register = write_register = 0;
+    if (n == 1) {
+        read_register = Wire.read();
+    } else if (n >= 2) {
+        write_register = Wire.read();
+        write_value = Wire.read();
+    }
+    while (Wire.available()) Wire.read();   // throw away any extra data
+}
 
-unsigned long last_millis;
-volatile byte read_register;
-volatile byte write_register;
-volatile byte register_value;
-byte i2creqbuf[rvsize+1];
+
+void i2c_request() {
+    // NOTE: This is an interrupt handler. Do not user Serial in this function.
+    registers.vals.left = left_wheel->getWheelData();
+    registers.vals.right = right_wheel->getWheelData();
+    if (read_register < rvsize) {
+        Wire.write(registers.data + read_register, rvsize - read_register);
+    } else {
+        Wire.write(-1);
+    }
+    read_register = 0;
+}
+
+
+void lw_encoder_isr() {
+    // NOTE: This is an interrupt handler. Do not user Serial in this function.
+    lw_clicks++;
+}
+
+
+void rw_encoder_isr() {
+    // NOTE: This is an interrupt handler. Do not user Serial in this function.
+    rw_clicks++;
+}
 
 
 void setup() {
     Serial.begin(9600);
 
     Serial.println("Initialize global variables");
-    request_register = 0;
+    read_register = write_register = write_value = 0;
     last_millis = millis();
     left_wheel = new Wheel("Left Wheel", LW_ENA_PIN, LW_FWD_PIN, LW_REV_PIN, LW_ENC_PIN);
     right_wheel = new Wheel("Right Wheel", LW_ENA_PIN, LW_FWD_PIN, LW_REV_PIN, LW_ENC_PIN);
@@ -104,79 +116,37 @@ void setup() {
     Wire.onRequest(i2c_request);
 }
 
+
 void loop() {
     switch (write_register) {
         case LW_DIR_REG:
-            left_wheel->change_direction(register_value);
+        	if (write_value <= REV) {
+        		left_wheel->changeDirection((Dir)write_value);
+        	}
             break;
         case LW_SPEED_REG:
-            left_wheel->change_speed(register_value);
+			left_wheel->changeSpeed(write_value);
             break;
         case RW_DIR_REG:
-            right_wheel->change_direction(register_value);
+        	if (write_value <= REV) {
+        		right_wheel->changeDirection((Dir)write_value);
+        	}
             break;
         case RW_SPEED_REG:
-            right_wheel->change_speed(register_value);
+            right_wheel->changeSpeed(write_value);
             break;
     }
+    write_register = write_value = 0;
 
     if (millis() - last_millis >= 1000) { // it's been a second
-        left_wheel->measure_speed();
-        right_wheel->measure_speed();
+        left_wheel->measureSpeed(lw_clicks);
+        right_wheel->measureSpeed(rw_clicks);
         last_millis = millis();
     }
 
     left_wheel->loop();
     right_wheel->loop();
+
+    delay(100);
 }
 
-
-void stop_all_motors() {
-    left_wheel->stop();
-    right_wheel->stop();
-}
-
-
-void serial_print_hex(byte b) {
-    char hexbuf[5];
-    sprintf(hexbuf, "%02X ", b);
-    Serial.print(hexbuf);
-}
-
-
-void i2c_receive(int n) {
-    // NOTE: This is an interrupt handler. Do not user Serial in this function.
-    read_register = write_register = 0;
-    if (n == 1) {
-        read_register = Wire.read();
-    } else if (n >= 2) {
-        write_register = Wire.read();
-        register_value = Wire.read();
-    }
-    while (Wire.available()) Wire.read();   // throw away any extra data
-}
-
-void i2c_request() {
-    // NOTE: This is an interrupt handler. Do not user Serial in this function.
-    registers.vals.left = left_wheel->regs();
-    registers.vals.right = right_wheel->regs();
-    if (request_register >= 0 && request_register < rvsize) {
-        Wire.write(registers.data + request_register, rvsize - request_register);
-    } else {
-        Wire.write(-1);
-    }
-}
-
-
-void lw_encoder_isr() {
-    // attachInterrupt won't let you pass an object's method as the ISR
-    // NOTE: This is an interrupt handler. Do not user Serial in this function.
-    left_wheel->encoder_isr();
-}
-
-
-void rw_encoder_isr() {
-    // attachInterrupt won't let you pass an object's method as the ISR
-    // NOTE: This is an interrupt handler. Do not user Serial in this function.
-    right_wheel->encoder_isr();
-}
