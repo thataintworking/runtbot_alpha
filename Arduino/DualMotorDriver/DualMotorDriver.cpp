@@ -13,49 +13,60 @@
  * I2C Device Address: 0x10
  *
  * I2C Registers:
- *      0x00    RO      Device ID. Should always be 0x68
- *      0x01    RO      Software Version
- *      0x02    RW      Left Wheel Direction: 0x00 stop, 0x01 forward, 0x02 reverse
- *      0x03    RW      Left Wheel Target speed clicks-per-second
- *      0x04    RO      Left Wheel Actual speed clicks-per-second
- *      0x05    RO      Left Wheel Current PWM output MSB
- *      0x06    RO      Left Wheel Current PWM output LSB
- *      0x07    RW      Right Wheel Direction: 0x00 stop, 0x01 forward, 0x02 reverse
- *      0x08    RW      Right Wheel Target speed clicks-per-second
- *      0x09    RO      Right Wheel Actual speed clicks-per-second
- *      0x0A    RO      Right Wheel Current PWM output MSB
- *      0x0B    RO      Right Wheel Current PWM output LSB
+ *      0    RO      Device ID. Should always be 0x68
+ *      1    RO      Software Version
+ *      2    RW      Left Wheel Direction: 0 = stop, 1 = forward, 2 = reverse
+ *      3    RW      Left Wheel Target speed clicks-per-second
+ *      4    RO      Left Wheel Actual speed clicks-per-second
+ *      5    RO      Left Wheel  PWM output
+ *      6    RW      Right Wheel Direction: 0 = stop, 1 = forward, 2 = reverse
+ *      7    RW      Right Wheel Target speed clicks-per-second
+ *      8    RO      Right Wheel Actual speed clicks-per-second
+ *      9    RO      Right Wheel PWM output
  ***/
 
-#include "DualMotorDriver.h"
-#include "Wheel.h"
+#include "Arduino.h"
 #include <Wire.h>
 
+#define I2C_ADDR   0x10
+#define I2C_NUM_REGS 16
 
-volatile unsigned long lw_clicks;
-volatile unsigned long rw_clicks;
-volatile byte read_register;
-volatile byte write_register;
-volatile byte write_value;
+#define LW_ENA_PIN  7
+#define LW_FWD_PIN  6
+#define LW_REV_PIN  5
+#define LW_ENC_PIN  3
+#define RW_ENA_PIN  12
+#define RW_FWD_PIN  10
+#define RW_REV_PIN  9
+#define RW_ENC_PIN  2
 
-unsigned long last_millis;
-Wheel* left_wheel;
-Wheel* right_wheel;
+#define LW_DIR_REG    0x02
+#define LW_SPEED_REG  0x03
+#define RW_DIR_REG    0x07
+#define RW_SPEED_REG  0x08
 
-struct RegisterValues {
-    byte device_id;
-    byte software_verion;
-    WheelData left;
-    WheelData right;
-};
+#define DEVICE_ID 77
+#define SOFTWARE_VERSION 1
 
-const int rvsize = sizeof(RegisterValues);
+boolean forward = false;
+byte speed = 0;
 
-union Registers {
-    byte data[rvsize];
-    RegisterValues vals;
-} registers;
+volatile byte read_register, write_register, write_value;
+byte registers[] = { 'X', 1, 0, 0, 0, 0 };
+const int reg_len = 6;
 
+volatile unsigned long lw_clicks, rw_clicks;
+unsigned long last_lw_clicks, last_rw_clicks;
+
+
+void lw_encoder_isr() {
+	lw_clicks++;
+}
+
+
+void rw_encoder_isr() {
+	rw_clicks++;
+}
 
 void i2c_receive(int n) {
     // NOTE: This is an interrupt handler. Do not user Serial in this function.
@@ -72,81 +83,76 @@ void i2c_receive(int n) {
 
 void i2c_request() {
     // NOTE: This is an interrupt handler. Do not user Serial in this function.
-    registers.vals.left = left_wheel->getWheelData();
-    registers.vals.right = right_wheel->getWheelData();
-    if (read_register < rvsize) {
-        Wire.write(registers.data + read_register, rvsize - read_register);
+    if (read_register < reg_len) {
+    	registers[2] = (forward ? 1 : 0);
+    	registers[3] = speed;
+    	registers[4] = (byte)(lw_clicks - last_lw_clicks);
+    	registers[5] = (byte)(rw_clicks - last_rw_clicks);
+        Wire.write(registers[read_register]);
     } else {
-        Wire.write(-1);
+        Wire.write((byte)0);
     }
-    read_register = 0;
-}
-
-
-void lw_encoder_isr() {
-    // NOTE: This is an interrupt handler. Do not user Serial in this function.
-    lw_clicks++;
-}
-
-
-void rw_encoder_isr() {
-    // NOTE: This is an interrupt handler. Do not user Serial in this function.
-    rw_clicks++;
+    read_register = 255;
 }
 
 
 void setup() {
-    Serial.begin(9600);
+	Serial.begin(9600);
 
-    Serial.println("Initialize global variables");
-    read_register = write_register = write_value = 0;
-    last_millis = millis();
-    left_wheel = new Wheel("Left Wheel", LW_ENA_PIN, LW_FWD_PIN, LW_REV_PIN, LW_ENC_PIN);
-    right_wheel = new Wheel("Right Wheel", LW_ENA_PIN, LW_FWD_PIN, LW_REV_PIN, LW_ENC_PIN);
-    registers.vals.device_id = DEVICE_ID;
-    registers.vals.software_verion = SOFTWARE_VERSION;
+	Serial.println("Configuring pins");
+	pinMode(5, OUTPUT);
+	pinMode(6, OUTPUT);
+	pinMode(9, OUTPUT);
+	pinMode(10, OUTPUT);
+	digitalWrite(5, LOW);
+	digitalWrite(6, LOW);
+	digitalWrite(9, LOW);
+	digitalWrite(10, LOW);
 
-    Serial.println("Attaching interrupts");
-    attachInterrupt(digitalPinToInterrupt(LW_ENC_PIN), lw_encoder_isr, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(RW_ENC_PIN), rw_encoder_isr, CHANGE);
+	Serial.println("Configuring encoder");
+	lw_clicks = rw_clicks = last_lw_clicks = last_rw_clicks = 0;
+    attachInterrupt(digitalPinToInterrupt(3), lw_encoder_isr, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(2), rw_encoder_isr, CHANGE);
 
-    Serial.println("Initialize I2C");
-    Wire.begin(I2C_ADDR);
+    read_register = write_register = write_value = 255;
+    Serial.println("Initializing I2C");
+    Wire.begin(0x20);
     Wire.onReceive(i2c_receive);
     Wire.onRequest(i2c_request);
 }
 
 
 void loop() {
-    switch (write_register) {
-        case LW_DIR_REG:
-        	if (write_value <= REV) {
-        		left_wheel->changeDirection((Dir)write_value);
-        	}
-            break;
-        case LW_SPEED_REG:
-			left_wheel->changeSpeed(write_value);
-            break;
-        case RW_DIR_REG:
-        	if (write_value <= REV) {
-        		right_wheel->changeDirection((Dir)write_value);
-        	}
-            break;
-        case RW_SPEED_REG:
-            right_wheel->changeSpeed(write_value);
-            break;
-    }
-    write_register = write_value = 0;
+	if (write_register < reg_len) {
+		switch (write_register) {
+			case 2:
+				forward = (boolean)write_value;
+				break;
+			case 3:
+				speed = write_value;
+				break;
+		}
+		write_register = write_value = 255;
+	}
 
-    if (millis() - last_millis >= 1000) { // it's been a second
-        left_wheel->measureSpeed(lw_clicks);
-        right_wheel->measureSpeed(rw_clicks);
-        last_millis = millis();
-    }
+	Serial.print("Dir/Speed: ");
+	Serial.print(forward ? "FWD/" : "REV/");
+	Serial.println(speed);
+	digitalWrite(forward ? 6 : 5, LOW);
+	analogWrite(forward ? 5 : 6, speed);
+	digitalWrite(forward ? 10 : 9, LOW);
+	analogWrite(forward ? 9 : 10, speed);
 
-    left_wheel->loop();
-    right_wheel->loop();
+	if (last_lw_clicks != lw_clicks) {
+		Serial.print("Left wheel clicks: ");
+		Serial.println(lw_clicks - last_lw_clicks);
+		last_lw_clicks = lw_clicks;
+	}
 
-    delay(100);
+	if (last_rw_clicks != rw_clicks) {
+		Serial.print("Right wheel clicks: ");
+		Serial.println(rw_clicks - last_rw_clicks);
+		last_rw_clicks = rw_clicks;
+	}
+	delay(5000);
 }
-
