@@ -115,8 +115,9 @@ void setup() {
     attachInterrupt(digitalPinToInterrupt(2), rw_encoder_isr, CHANGE);
 
     read_register = write_register = write_value = 255;
-    Serial.println("Initializing I2C");
-    Wire.begin(0x20);
+    Serial.print("Initializing I2C Slave Mode at 0x");
+    Serial.println(I2C_ADDR, HEX);
+    Wire.begin(I2C_ADDR);
     Wire.onReceive(i2c_receive);
     Wire.onRequest(i2c_request);
 }
