@@ -4,7 +4,7 @@
 boolean forward = false;
 byte speed = 0;
 
-volatile byte read_register, write_register, write_value;
+volatile byte read_register, write_register, write_value1;
 byte registers[] = { 'X', 1, 0, 0, 0, 0 };
 const int reg_len = 6;
 
@@ -28,7 +28,7 @@ void i2c_receive(int n) {
         read_register = Wire.read();
     } else if (n >= 2) {
         write_register = Wire.read();
-        write_value = Wire.read();
+        write_value1 = Wire.read();
     }
     while (Wire.available()) Wire.read();   // throw away any extra data
 }
@@ -67,7 +67,7 @@ void setup() {
     attachInterrupt(digitalPinToInterrupt(3), lw_encoder_isr, CHANGE);
     attachInterrupt(digitalPinToInterrupt(2), rw_encoder_isr, CHANGE);
 
-    read_register = write_register = write_value = 255;
+    read_register = write_register = write_value1 = 255;
     Serial.println("Initializing I2C");
     Wire.begin(0x20);
     Wire.onReceive(i2c_receive);
@@ -79,13 +79,13 @@ void loop() {
 	if (write_register < reg_len) {
 		switch (write_register) {
 			case 2:
-				forward = (boolean)write_value;
+				forward = (boolean)write_value1;
 				break;
 			case 3:
-				speed = write_value;
+				speed = write_value1;
 				break;
 		}
-		write_register = write_value = 255;
+		write_register = write_value1 = 255;
 	}
 
 	Serial.print("Dir/Speed: ");

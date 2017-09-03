@@ -40,23 +40,34 @@
 #define RW_REV_PIN  9
 #define RW_ENC_PIN  2
 
-#define LW_DIR_REG    0x02
-#define LW_SPEED_REG  0x03
-#define RW_DIR_REG    0x07
-#define RW_SPEED_REG  0x08
+#define LW_DIR_REG    2
+#define LW_SPEED_REG  3
+#define LW_CPS_REG    5
+#define RW_DIR_REG    7
+#define RW_SPEED_REG  8
+#define RW_CPS_REG    10
+#define REG_NULL      255
 
-#define DEVICE_ID 77
-#define SOFTWARE_VERSION 1
+volatile byte read_register, write_register, write_value1, write_value2;
 
-boolean forward = false;
-byte speed = 0;
+struct RegisterValues {
+	byte dev_id;
+	byte sw_ver;
+	byte lw_dir;
+	word lw_speed;
+	word lw_cps;
+	byte rw_dir;
+	word rw_speed;
+	word rw_cps;
+} registers;
 
-volatile byte read_register, write_register, write_value;
-byte registers[] = { 'X', 1, 0, 0, 0, 0 };
-const int reg_len = 6;
+const int reg_len = sizeof(RegisterValues);
 
 volatile unsigned long lw_clicks, rw_clicks;
+
 unsigned long last_lw_clicks, last_rw_clicks;
+
+unsigned int loop_count;
 
 
 void lw_encoder_isr() {
@@ -70,12 +81,13 @@ void rw_encoder_isr() {
 
 void i2c_receive(int n) {
     // NOTE: This is an interrupt handler. Do not user Serial in this function.
-    read_register = write_register = 0;
+    read_register = write_register = write_value1 = write_value2 = REG_NULL;
     if (n == 1) {
         read_register = Wire.read();
     } else if (n >= 2) {
         write_register = Wire.read();
-        write_value = Wire.read();
+        write_value1 = Wire.read();
+        if (n > 2) write_value2 = Wire.read();
     }
     while (Wire.available()) Wire.read();   // throw away any extra data
 }
@@ -84,15 +96,11 @@ void i2c_receive(int n) {
 void i2c_request() {
     // NOTE: This is an interrupt handler. Do not user Serial in this function.
     if (read_register < reg_len) {
-    	registers[2] = (forward ? 1 : 0);
-    	registers[3] = speed;
-    	registers[4] = (byte)(lw_clicks - last_lw_clicks);
-    	registers[5] = (byte)(rw_clicks - last_rw_clicks);
-        Wire.write(registers[read_register]);
+		Wire.write(((byte*)registers) + read_register, reg_len - read_register);
     } else {
         Wire.write((byte)0);
     }
-    read_register = 255;
+    read_register = REG_NULL;
 }
 
 
@@ -114,46 +122,75 @@ void setup() {
     attachInterrupt(digitalPinToInterrupt(3), lw_encoder_isr, CHANGE);
     attachInterrupt(digitalPinToInterrupt(2), rw_encoder_isr, CHANGE);
 
-    read_register = write_register = write_value = 255;
+    read_register = write_register = write_value1 = 255;
     Serial.print("Initializing I2C Slave Mode at 0x");
     Serial.println(I2C_ADDR, HEX);
     Wire.begin(I2C_ADDR);
     Wire.onReceive(i2c_receive);
     Wire.onRequest(i2c_request);
+
+    loop_count = 0;
 }
 
 
 void loop() {
 	if (write_register < reg_len) {
 		switch (write_register) {
-			case 2:
-				forward = (boolean)write_value;
+			case LW_DIR_REG:
+				registers.lw_dir = (bool)write_value1;
 				break;
-			case 3:
-				speed = write_value;
+			case RW_DIR_REG:
+				registers.rw_dir = (bool)write_value1;
+				break;
+			case LW_SPEED_REG:
+				registers.lw_speed = write_value1 + (write_value2 << 8);
+				break;
+			case RW_SPEED_REG:
+				registers.rw_speed = write_value1 + (write_value2 << 8);
 				break;
 		}
-		write_register = write_value = 255;
+
+		digitalWrite(registers.lw_dir ? 6 : 5, LOW);
+		analogWrite(registers.lw_dir ? 5 : 6, registers.lw_speed);
+		digitalWrite(registers.rw_dir ? 10 : 9, LOW);
+		analogWrite(registers.rw_dir ? 9 : 10, registers.rw_speed);
+
+		write_register = write_value1 = write_value2 = REG_NULL;
+
+		Serial.print("Dir/Speed: LEFT ");
+		Serial.print(registers.lw_dir ? "FWD/" : "REV/");
+		Serial.print(registers.lw_speed);
+		Serial.print(", RIGHT ");
+		Serial.print(registers.rw_dir ? "FWD/" : "REV/");
+		Serial.print(registers.rw_speed);
+		Serial.println();
 	}
 
-	Serial.print("Dir/Speed: ");
-	Serial.print(forward ? "FWD/" : "REV/");
-	Serial.println(speed);
-	digitalWrite(forward ? 6 : 5, LOW);
-	analogWrite(forward ? 5 : 6, speed);
-	digitalWrite(forward ? 10 : 9, LOW);
-	analogWrite(forward ? 9 : 10, speed);
+	if (loop_count < 10) {
+		loop_count++;
+	} else {
+		bool speed_change = false;
 
-	if (last_lw_clicks != lw_clicks) {
-		Serial.print("Left wheel clicks: ");
-		Serial.println(lw_clicks - last_lw_clicks);
+		if (lw_clicks > last_lw_clicks) { // this skips the time when the click counter wraps around
+			registers.lw_cps = lw_clicks - last_lw_clicks;
+			speed_change = true;
+		}
 		last_lw_clicks = lw_clicks;
-	}
 
-	if (last_rw_clicks != rw_clicks) {
-		Serial.print("Right wheel clicks: ");
-		Serial.println(rw_clicks - last_rw_clicks);
+		if (rw_clicks > last_rw_clicks) { // this skips the time when the click counter wraps around
+			registers.rw_cps = rw_clicks - last_rw_clicks;
+			speed_change = true;
+		}
 		last_rw_clicks = rw_clicks;
+
+		loop_count = 0;
+
+		if (speed_change) {
+			Serial.print("CPS: LEFT ");
+			Serial.print(registers.lw_cps);
+			Serial.print(", RIGHT ");
+			Serial.print(registers.rw_cps);
+		}
 	}
-	delay(5000);
+	delay(100);
 }
