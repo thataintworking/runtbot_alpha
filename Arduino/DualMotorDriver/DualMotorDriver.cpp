@@ -59,9 +59,14 @@ struct RegisterValues {
 	byte rw_dir;
 	word rw_speed;
 	word rw_cps;
-} registers;
+};
 
 const int reg_len = sizeof(RegisterValues);
+
+union Registers {
+	RegisterValues v;
+	byte b[reg_len];
+} registers;
 
 volatile unsigned long lw_clicks, rw_clicks;
 
@@ -96,7 +101,7 @@ void i2c_receive(int n) {
 void i2c_request() {
     // NOTE: This is an interrupt handler. Do not user Serial in this function.
     if (read_register < reg_len) {
-		Wire.write(((byte*)registers) + read_register, reg_len - read_register);
+		Wire.write(((byte*)registers.b) + read_register, reg_len - read_register);
     } else {
         Wire.write((byte)0);
     }
@@ -137,32 +142,32 @@ void loop() {
 	if (write_register < reg_len) {
 		switch (write_register) {
 			case LW_DIR_REG:
-				registers.lw_dir = (bool)write_value1;
+				registers.v.lw_dir = (bool)write_value1;
 				break;
 			case RW_DIR_REG:
-				registers.rw_dir = (bool)write_value1;
+				registers.v.rw_dir = (bool)write_value1;
 				break;
 			case LW_SPEED_REG:
-				registers.lw_speed = write_value1 + (write_value2 << 8);
+				registers.v.lw_speed = write_value1 + (write_value2 << 8);
 				break;
 			case RW_SPEED_REG:
-				registers.rw_speed = write_value1 + (write_value2 << 8);
+				registers.v.rw_speed = write_value1 + (write_value2 << 8);
 				break;
 		}
 
-		digitalWrite(registers.lw_dir ? 6 : 5, LOW);
-		analogWrite(registers.lw_dir ? 5 : 6, registers.lw_speed);
-		digitalWrite(registers.rw_dir ? 10 : 9, LOW);
-		analogWrite(registers.rw_dir ? 9 : 10, registers.rw_speed);
+		digitalWrite(registers.v.lw_dir ? 6 : 5, LOW);
+		analogWrite(registers.v.lw_dir ? 5 : 6, registers.v.lw_speed);
+		digitalWrite(registers.v.rw_dir ? 10 : 9, LOW);
+		analogWrite(registers.v.rw_dir ? 9 : 10, registers.v.rw_speed);
 
 		write_register = write_value1 = write_value2 = REG_NULL;
 
 		Serial.print("Dir/Speed: LEFT ");
-		Serial.print(registers.lw_dir ? "FWD/" : "REV/");
-		Serial.print(registers.lw_speed);
+		Serial.print(registers.v.lw_dir ? "FWD/" : "REV/");
+		Serial.print(registers.v.lw_speed);
 		Serial.print(", RIGHT ");
-		Serial.print(registers.rw_dir ? "FWD/" : "REV/");
-		Serial.print(registers.rw_speed);
+		Serial.print(registers.v.rw_dir ? "FWD/" : "REV/");
+		Serial.print(registers.v.rw_speed);
 		Serial.println();
 	}
 
@@ -172,13 +177,13 @@ void loop() {
 		bool speed_change = false;
 
 		if (lw_clicks > last_lw_clicks) { // this skips the time when the click counter wraps around
-			registers.lw_cps = lw_clicks - last_lw_clicks;
+			registers.v.lw_cps = lw_clicks - last_lw_clicks;
 			speed_change = true;
 		}
 		last_lw_clicks = lw_clicks;
 
 		if (rw_clicks > last_rw_clicks) { // this skips the time when the click counter wraps around
-			registers.rw_cps = rw_clicks - last_rw_clicks;
+			registers.v.rw_cps = rw_clicks - last_rw_clicks;
 			speed_change = true;
 		}
 		last_rw_clicks = rw_clicks;
@@ -187,9 +192,9 @@ void loop() {
 
 		if (speed_change) {
 			Serial.print("CPS: LEFT ");
-			Serial.print(registers.lw_cps);
+			Serial.print(registers.v.lw_cps);
 			Serial.print(", RIGHT ");
-			Serial.print(registers.rw_cps);
+			Serial.print(registers.v.rw_cps);
 		}
 	}
 	delay(100);
