@@ -4,7 +4,7 @@ randomly move around the house. It is intended to be a
 learning exercise more than anything.
 
 I am in the process if offloading the motor drive process
-to a 5v ATtiny84.
+to an ATmega328.
 
 ---
 
