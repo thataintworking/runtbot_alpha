@@ -166,10 +166,10 @@ environment/project/io.sloeber.core.toolChain.release.2079552611/A.EXTRA.TIME.DT
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.EXTRA.TIME.DTS/value=3600
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.EXTRA.TIME.LOCAL/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.EXTRA.TIME.LOCAL/operation=replace
-environment/project/io.sloeber.core.toolChain.release.2079552611/A.EXTRA.TIME.LOCAL/value=1504517650
+environment/project/io.sloeber.core.toolChain.release.2079552611/A.EXTRA.TIME.LOCAL/value=1504644511
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.EXTRA.TIME.UTC/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.EXTRA.TIME.UTC/operation=replace
-environment/project/io.sloeber.core.toolChain.release.2079552611/A.EXTRA.TIME.UTC/value=1504535650
+environment/project/io.sloeber.core.toolChain.release.2079552611/A.EXTRA.TIME.UTC/value=1504662511
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.EXTRA.TIME.ZONE/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.EXTRA.TIME.ZONE/operation=replace
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.EXTRA.TIME.ZONE/value=-21600
@@ -208,7 +208,7 @@ environment/project/io.sloeber.core.toolChain.release.2079552611/A.PROGRAM.TOOL/
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.PROGRAM.TOOL/value=${A.UPLOAD.TOOL}
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.AR.PATTERN.1/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.AR.PATTERN.1/operation=replace
-environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.AR.PATTERN.1/value="/home/ron/Apps/sloeber-4.1//arduinoPlugin/packages/arduino/tools/avr-gcc/4.9.2-atmel3.5.4-arduino2/bin/avr-gcc-ar" rcs 
+environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.AR.PATTERN.1/value="/home/ron/Apps/sloeber//arduinoPlugin/packages/arduino/tools/avr-gcc/4.9.2-atmel3.5.4-arduino2/bin/avr-gcc-ar" rcs 
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.AR.PATTERN.2/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.AR.PATTERN.2/operation=replace
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.AR.PATTERN.2/value=\ 
@@ -220,7 +220,7 @@ environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.AR.PAT
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.AR.PATTERN/value="${A.COMPILER.PATH}${A.COMPILER.AR.CMD}" ${A.COMPILER.AR.FLAGS} ${A.COMPILER.AR.EXTRA_FLAGS} "${A.ARCHIVE_FILE_PATH}" "${A.OBJECT_FILE}"
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.C.COMBINE.PATTERN.1/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.C.COMBINE.PATTERN.1/operation=replace
-environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.C.COMBINE.PATTERN.1/value="/home/ron/Apps/sloeber-4.1//arduinoPlugin/packages/arduino/tools/avr-gcc/4.9.2-atmel3.5.4-arduino2/bin/avr-gcc" -Wall -Wextra -Os -g -flto -fuse-linker-plugin -Wl,--gc-sections -mmcu\=atmega328p -o "/home/ron/Projects/runtbot/Arduino/DualMotorDriver/Release/DualMotorDriver.elf" 
+environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.C.COMBINE.PATTERN.1/value="/home/ron/Apps/sloeber//arduinoPlugin/packages/arduino/tools/avr-gcc/4.9.2-atmel3.5.4-arduino2/bin/avr-gcc" -Wall -Wextra -Os -g -flto -fuse-linker-plugin -Wl,--gc-sections -mmcu\=atmega328p -o "/home/ron/Projects/runtbot/Arduino/DualMotorDriver/Release/DualMotorDriver.elf" 
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.C.COMBINE.PATTERN.2/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.C.COMBINE.PATTERN.2/operation=replace
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.C.COMBINE.PATTERN.2/value=\ 
@@ -232,7 +232,7 @@ environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.C.COMB
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.C.COMBINE.PATTERN/value="${A.COMPILER.PATH}${A.COMPILER.C.ELF.CMD}" ${A.COMPILER.C.ELF.FLAGS} -mmcu\=${A.BUILD.MCU} ${A.COMPILER.C.ELF.EXTRA_FLAGS} -o "${A.BUILD.PATH}/${A.BUILD.PROJECT_NAME}.elf" ${A.OBJECT_FILES} "${A.BUILD.PATH}/${A.ARCHIVE_FILE}" "-L${A.BUILD.PATH}" -lm
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.C.O.PATTERN.1/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.C.O.PATTERN.1/operation=replace
-environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.C.O.PATTERN.1/value="/home/ron/Apps/sloeber-4.1//arduinoPlugin/packages/arduino/tools/avr-gcc/4.9.2-atmel3.5.4-arduino2/bin/avr-gcc" -c -g -Os -Wall -Wextra -std\=gnu11 -ffunction-sections -fdata-sections -flto -fno-fat-lto-objects -mmcu\=atmega328p -DF_CPU\=16000000L -DARDUINO\=10802 -DARDUINO_AVR_NANO -DARDUINO_ARCH_AVR  
+environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.C.O.PATTERN.1/value="/home/ron/Apps/sloeber//arduinoPlugin/packages/arduino/tools/avr-gcc/4.9.2-atmel3.5.4-arduino2/bin/avr-gcc" -c -g -Os -Wall -Wextra -std\=gnu11 -ffunction-sections -fdata-sections -flto -fno-fat-lto-objects -mmcu\=atmega328p -DF_CPU\=16000000L -DARDUINO\=10802 -DARDUINO_AVR_NANO -DARDUINO_ARCH_AVR  
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.C.O.PATTERN.2/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.C.O.PATTERN.2/operation=replace
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.C.O.PATTERN.2/value=\ -o 
@@ -244,7 +244,7 @@ environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.C.O.PA
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.C.O.PATTERN/value="${A.COMPILER.PATH}${A.COMPILER.C.CMD}" ${A.COMPILER.C.FLAGS} -mmcu\=${A.BUILD.MCU} -DF_CPU\=${A.BUILD.F_CPU} -DARDUINO\=${A.RUNTIME.IDE.VERSION} -DARDUINO_${A.BUILD.BOARD} -DARDUINO_ARCH_${A.BUILD.ARCH} ${A.COMPILER.C.EXTRA_FLAGS} ${A.BUILD.EXTRA_FLAGS} ${A.INCLUDES} "${A.SOURCE_FILE}" -o "${A.OBJECT_FILE}"
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.CPP.O.PATTERN.1/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.CPP.O.PATTERN.1/operation=replace
-environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.CPP.O.PATTERN.1/value="/home/ron/Apps/sloeber-4.1//arduinoPlugin/packages/arduino/tools/avr-gcc/4.9.2-atmel3.5.4-arduino2/bin/avr-g++" -c -g -Os -Wall -Wextra -std\=gnu++11 -fpermissive -fno-exceptions -ffunction-sections -fdata-sections -fno-threadsafe-statics -flto -mmcu\=atmega328p -DF_CPU\=16000000L -DARDUINO\=10802 -DARDUINO_AVR_NANO -DARDUINO_ARCH_AVR  
+environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.CPP.O.PATTERN.1/value="/home/ron/Apps/sloeber//arduinoPlugin/packages/arduino/tools/avr-gcc/4.9.2-atmel3.5.4-arduino2/bin/avr-g++" -c -g -Os -Wall -Wextra -std\=gnu++11 -fpermissive -fno-exceptions -ffunction-sections -fdata-sections -fno-threadsafe-statics -flto -mmcu\=atmega328p -DF_CPU\=16000000L -DARDUINO\=10802 -DARDUINO_AVR_NANO -DARDUINO_ARCH_AVR  
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.CPP.O.PATTERN.2/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.CPP.O.PATTERN.2/operation=replace
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.CPP.O.PATTERN.2/value=\ -o 
@@ -256,13 +256,13 @@ environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.CPP.O.
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.CPP.O.PATTERN/value="${A.COMPILER.PATH}${A.COMPILER.CPP.CMD}" ${A.COMPILER.CPP.FLAGS} -mmcu\=${A.BUILD.MCU} -DF_CPU\=${A.BUILD.F_CPU} -DARDUINO\=${A.RUNTIME.IDE.VERSION} -DARDUINO_${A.BUILD.BOARD} -DARDUINO_ARCH_${A.BUILD.ARCH} ${A.COMPILER.CPP.EXTRA_FLAGS} ${A.BUILD.EXTRA_FLAGS} ${A.INCLUDES} "${A.SOURCE_FILE}" -o "${A.OBJECT_FILE}"
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.OBJCOPY.EEP.PATTERN.1/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.OBJCOPY.EEP.PATTERN.1/operation=replace
-environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.OBJCOPY.EEP.PATTERN.1/value="/home/ron/Apps/sloeber-4.1//arduinoPlugin/packages/arduino/tools/avr-gcc/4.9.2-atmel3.5.4-arduino2/bin/avr-objcopy" -O ihex -j .eeprom --set-section-flags\=.eeprom\=alloc,load --no-change-warnings --change-section-lma .eeprom\=0 "/home/ron/Projects/runtbot/Arduino/DualMotorDriver/Release/DualMotorDriver.elf" "/home/ron/Projects/runtbot/Arduino/DualMotorDriver/Release/DualMotorDriver.eep"
+environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.OBJCOPY.EEP.PATTERN.1/value="/home/ron/Apps/sloeber//arduinoPlugin/packages/arduino/tools/avr-gcc/4.9.2-atmel3.5.4-arduino2/bin/avr-objcopy" -O ihex -j .eeprom --set-section-flags\=.eeprom\=alloc,load --no-change-warnings --change-section-lma .eeprom\=0 "/home/ron/Projects/runtbot/Arduino/DualMotorDriver/Release/DualMotorDriver.elf" "/home/ron/Projects/runtbot/Arduino/DualMotorDriver/Release/DualMotorDriver.eep"
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.OBJCOPY.EEP.PATTERN/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.OBJCOPY.EEP.PATTERN/operation=replace
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.OBJCOPY.EEP.PATTERN/value="${A.COMPILER.PATH}${A.COMPILER.OBJCOPY.CMD}" ${A.COMPILER.OBJCOPY.EEP.FLAGS} ${A.COMPILER.OBJCOPY.EEP.EXTRA_FLAGS} "${A.BUILD.PATH}/${A.BUILD.PROJECT_NAME}.elf" "${A.BUILD.PATH}/${A.BUILD.PROJECT_NAME}.eep"
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.OBJCOPY.HEX.PATTERN.1/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.OBJCOPY.HEX.PATTERN.1/operation=replace
-environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.OBJCOPY.HEX.PATTERN.1/value="/home/ron/Apps/sloeber-4.1//arduinoPlugin/packages/arduino/tools/avr-gcc/4.9.2-atmel3.5.4-arduino2/bin/avr-objcopy" -O ihex -R .eeprom "/home/ron/Projects/runtbot/Arduino/DualMotorDriver/Release/DualMotorDriver.elf" "/home/ron/Projects/runtbot/Arduino/DualMotorDriver/Release/DualMotorDriver.hex"
+environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.OBJCOPY.HEX.PATTERN.1/value="/home/ron/Apps/sloeber//arduinoPlugin/packages/arduino/tools/avr-gcc/4.9.2-atmel3.5.4-arduino2/bin/avr-objcopy" -O ihex -R .eeprom "/home/ron/Projects/runtbot/Arduino/DualMotorDriver/Release/DualMotorDriver.elf" "/home/ron/Projects/runtbot/Arduino/DualMotorDriver/Release/DualMotorDriver.hex"
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.OBJCOPY.HEX.PATTERN/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.OBJCOPY.HEX.PATTERN/operation=replace
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.OBJCOPY.HEX.PATTERN/value="${A.COMPILER.PATH}${A.COMPILER.ELF2HEX.CMD}" ${A.COMPILER.ELF2HEX.FLAGS} ${A.COMPILER.ELF2HEX.EXTRA_FLAGS} "${A.BUILD.PATH}/${A.BUILD.PROJECT_NAME}.elf" "${A.BUILD.PATH}/${A.BUILD.PROJECT_NAME}.hex"
@@ -280,7 +280,7 @@ environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.PREPRO
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.PREPROC.MACROS/value="${A.COMPILER.PATH}${A.COMPILER.CPP.CMD}" ${A.COMPILER.CPP.FLAGS} ${A.PREPROC.MACROS.FLAGS} -mmcu\=${A.BUILD.MCU} -DF_CPU\=${A.BUILD.F_CPU} -DARDUINO\=${A.RUNTIME.IDE.VERSION} -DARDUINO_${A.BUILD.BOARD} -DARDUINO_ARCH_${A.BUILD.ARCH} ${A.COMPILER.CPP.EXTRA_FLAGS} ${A.BUILD.EXTRA_FLAGS} ${A.INCLUDES} "${A.SOURCE_FILE}" -o "${A.PREPROCESSED_FILE_PATH}"
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.S.O.PATTERN.1/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.S.O.PATTERN.1/operation=replace
-environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.S.O.PATTERN.1/value="/home/ron/Apps/sloeber-4.1//arduinoPlugin/packages/arduino/tools/avr-gcc/4.9.2-atmel3.5.4-arduino2/bin/avr-gcc" -c -g -x assembler-with-cpp -flto -mmcu\=atmega328p -DF_CPU\=16000000L -DARDUINO\=10802 -DARDUINO_AVR_NANO -DARDUINO_ARCH_AVR  
+environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.S.O.PATTERN.1/value="/home/ron/Apps/sloeber//arduinoPlugin/packages/arduino/tools/avr-gcc/4.9.2-atmel3.5.4-arduino2/bin/avr-gcc" -c -g -x assembler-with-cpp -flto -mmcu\=atmega328p -DF_CPU\=16000000L -DARDUINO\=10802 -DARDUINO_AVR_NANO -DARDUINO_ARCH_AVR  
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.S.O.PATTERN.2/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.S.O.PATTERN.2/operation=replace
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.S.O.PATTERN.2/value=\ -o 
@@ -292,7 +292,7 @@ environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.S.O.PA
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.S.O.PATTERN/value="${A.COMPILER.PATH}${A.COMPILER.C.CMD}" ${A.COMPILER.S.FLAGS} -mmcu\=${A.BUILD.MCU} -DF_CPU\=${A.BUILD.F_CPU} -DARDUINO\=${A.RUNTIME.IDE.VERSION} -DARDUINO_${A.BUILD.BOARD} -DARDUINO_ARCH_${A.BUILD.ARCH} ${A.COMPILER.S.EXTRA_FLAGS} ${A.BUILD.EXTRA_FLAGS} ${A.INCLUDES} "${A.SOURCE_FILE}" -o "${A.OBJECT_FILE}"
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.SIZE.PATTERN.1/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.SIZE.PATTERN.1/operation=replace
-environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.SIZE.PATTERN.1/value="/home/ron/Apps/sloeber-4.1//arduinoPlugin/packages/arduino/tools/avr-gcc/4.9.2-atmel3.5.4-arduino2/bin/avr-size" -A "/home/ron/Projects/runtbot/Arduino/DualMotorDriver/Release/DualMotorDriver.elf"
+environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.SIZE.PATTERN.1/value="/home/ron/Apps/sloeber//arduinoPlugin/packages/arduino/tools/avr-gcc/4.9.2-atmel3.5.4-arduino2/bin/avr-size" -A "/home/ron/Projects/runtbot/Arduino/DualMotorDriver/Release/DualMotorDriver.elf"
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.SIZE.PATTERN/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.SIZE.PATTERN/operation=replace
 environment/project/io.sloeber.core.toolChain.release.2079552611/A.RECIPE.SIZE.PATTERN/value="${A.COMPILER.PATH}${A.COMPILER.SIZE.CMD}" -A "${A.BUILD.PATH}/${A.BUILD.PROJECT_NAME}.elf"
@@ -463,7 +463,7 @@ environment/project/io.sloeber.core.toolChain.release.2079552611/JANTJE.COM_PORT
 environment/project/io.sloeber.core.toolChain.release.2079552611/JANTJE.COM_PORT/value=/dev/ttyUSB0
 environment/project/io.sloeber.core.toolChain.release.2079552611/JANTJE.ECLIPSE_LOCATION/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.2079552611/JANTJE.ECLIPSE_LOCATION/operation=replace
-environment/project/io.sloeber.core.toolChain.release.2079552611/JANTJE.ECLIPSE_LOCATION/value=${eclipse_home}///////////////////////////////////////////////////////////
+environment/project/io.sloeber.core.toolChain.release.2079552611/JANTJE.ECLIPSE_LOCATION/value=${eclipse_home}///////////////////////////////////////////////////////////////
 environment/project/io.sloeber.core.toolChain.release.2079552611/JANTJE.EXTRA.C.COMPILE/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.2079552611/JANTJE.EXTRA.C.COMPILE/operation=replace
 environment/project/io.sloeber.core.toolChain.release.2079552611/JANTJE.EXTRA.C.COMPILE/value=

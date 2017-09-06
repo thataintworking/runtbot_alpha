@@ -13,16 +13,16 @@
  * I2C Device Address: 0x10
  *
  * I2C Registers:
- *      0    RO      Device ID. Should always be 0x68
- *      1    RO      Software Version
- *      2    RW      Left Wheel Direction: 0 = stop, 1 = forward, 2 = reverse
- *      3    RW      Left Wheel Target speed clicks-per-second
- *      4    RO      Left Wheel Actual speed clicks-per-second
- *      5    RO      Left Wheel  PWM output
- *      6    RW      Right Wheel Direction: 0 = stop, 1 = forward, 2 = reverse
- *      7    RW      Right Wheel Target speed clicks-per-second
- *      8    RO      Right Wheel Actual speed clicks-per-second
- *      9    RO      Right Wheel PWM output
+ *      0   RO	B	Device ID. Should always be 0x68
+ *      1   RO  B   Software Version
+ *      2   RW  B   Left Wheel Direction: 1 = forward, 0 = reverse
+ *      3   RW  B   Left Wheel Target Speed CPS/10
+ *      4   RO  B   Left Wheel Actual Speed CPS/10
+ *      5	RO  B	Left Wheel PWM
+ *      6   RW  B   Right Wheel Direction: 1 = forward, 0 = reverse
+ *      7   RW  B   Right Wheel Target Speed CPS/10
+ *      8   RO  B   Right Wheel Actual Speed CPS/10
+ *      9	RO  B	Right Wheel PWM
  ***/
 
 #include "Arduino.h"
@@ -42,23 +42,25 @@
 
 #define LW_DIR_REG    2
 #define LW_SPEED_REG  3
-#define LW_CPS_REG    5
-#define RW_DIR_REG    7
-#define RW_SPEED_REG  8
-#define RW_CPS_REG    10
+#define LW_CPS_REG    4
+#define RW_DIR_REG    6
+#define RW_SPEED_REG  7
+#define RW_CPS_REG    8
 #define REG_NULL      255
 
-volatile byte read_register, write_register, write_value1, write_value2;
+volatile byte read_register, write_register, write_value;
 
 struct RegisterValues {
 	byte dev_id;
 	byte sw_ver;
 	byte lw_dir;
-	word lw_speed;
-	word lw_cps;
+	byte lw_speed;
+	byte lw_cps;
+	byte lw_pwm;
 	byte rw_dir;
-	word rw_speed;
-	word rw_cps;
+	byte rw_speed;
+	byte rw_cps;
+	byte rw_pwm;
 };
 
 const int reg_len = sizeof(RegisterValues);
@@ -71,28 +73,31 @@ union Registers {
 volatile unsigned long lw_clicks, rw_clicks;
 
 unsigned long last_lw_clicks, last_rw_clicks;
+int lw_pwm, rw_pwm;
 
 unsigned int loop_count;
+bool speed_change = false;
 
 
 void lw_encoder_isr() {
+    // NOTE: This is an interrupt handler. Do not user Serial in this function.
 	lw_clicks++;
 }
 
 
 void rw_encoder_isr() {
+    // NOTE: This is an interrupt handler. Do not user Serial in this function.
 	rw_clicks++;
 }
 
 void i2c_receive(int n) {
     // NOTE: This is an interrupt handler. Do not user Serial in this function.
-    read_register = write_register = write_value1 = write_value2 = REG_NULL;
+    read_register = write_register = write_value = REG_NULL;
     if (n == 1) {
         read_register = Wire.read();
     } else if (n >= 2) {
         write_register = Wire.read();
-        write_value1 = Wire.read();
-        if (n > 2) write_value2 = Wire.read();
+        write_value = Wire.read();
     }
     while (Wire.available()) Wire.read();   // throw away any extra data
 }
@@ -111,6 +116,20 @@ void i2c_request() {
 
 void setup() {
 	Serial.begin(9600);
+	Serial.println();
+
+	Serial.println("Initializing registers");
+	registers.v.dev_id 		= 'M';
+	registers.v.sw_ver 		= '2';
+	registers.v.lw_dir		= 1;
+	registers.v.lw_speed	= 0;
+	registers.v.lw_cps		= 0;
+	registers.v.lw_pwm		= 0;
+	registers.v.rw_dir		= 1;
+	registers.v.rw_speed	= 0;
+	registers.v.rw_cps		= 0;
+	registers.v.rw_pwm		= 0;
+
 
 	Serial.println("Configuring pins");
 	pinMode(5, OUTPUT);
@@ -127,7 +146,7 @@ void setup() {
     attachInterrupt(digitalPinToInterrupt(3), lw_encoder_isr, CHANGE);
     attachInterrupt(digitalPinToInterrupt(2), rw_encoder_isr, CHANGE);
 
-    read_register = write_register = write_value1 = 255;
+    read_register = write_register = write_value = 255;
     Serial.print("Initializing I2C Slave Mode at 0x");
     Serial.println(I2C_ADDR, HEX);
     Wire.begin(I2C_ADDR);
@@ -135,32 +154,34 @@ void setup() {
     Wire.onRequest(i2c_request);
 
     loop_count = 0;
+    speed_change = true;
 }
 
 
 void loop() {
+	////////////////////////////
+	// HANDLE REGISTER CHANGES
+	////////////////////////////
+
 	if (write_register < reg_len) {
 		switch (write_register) {
 			case LW_DIR_REG:
-				registers.v.lw_dir = (bool)write_value1;
+				registers.v.lw_dir = (bool)write_value;
 				break;
 			case RW_DIR_REG:
-				registers.v.rw_dir = (bool)write_value1;
+				registers.v.rw_dir = (bool)write_value;
 				break;
 			case LW_SPEED_REG:
-				registers.v.lw_speed = write_value1 + (write_value2 << 8);
+				registers.v.lw_speed = write_value;
+				if (write_value == 0) registers.v.lw_pwm = 0;
 				break;
 			case RW_SPEED_REG:
-				registers.v.rw_speed = write_value1 + (write_value2 << 8);
+				registers.v.rw_speed = write_value;
+				if (write_value == 0) registers.v.rw_pwm = 0;
 				break;
 		}
 
-		digitalWrite(registers.v.lw_dir ? 6 : 5, LOW);
-		analogWrite(registers.v.lw_dir ? 5 : 6, registers.v.lw_speed);
-		digitalWrite(registers.v.rw_dir ? 10 : 9, LOW);
-		analogWrite(registers.v.rw_dir ? 9 : 10, registers.v.rw_speed);
-
-		write_register = write_value1 = write_value2 = REG_NULL;
+		write_register = write_value = REG_NULL;
 
 		Serial.print("Dir/Speed: LEFT ");
 		Serial.print(registers.v.lw_dir ? "FWD/" : "REV/");
@@ -171,31 +192,83 @@ void loop() {
 		Serial.println();
 	}
 
+	////////////////////////////
+	// CALCULATE CPS
+	////////////////////////////
+
+	if (lw_clicks > last_lw_clicks) { // this skips the time when the click counter wraps around
+		unsigned long cps = lw_clicks - last_lw_clicks;
+		registers.v.lw_cps = (byte)(cps < 255 ? cps : 255);
+		speed_change = true;
+	}
+	last_lw_clicks = lw_clicks;
+
+	if (rw_clicks > last_rw_clicks) { // this skips the time when the click counter wraps around
+		unsigned long cps = rw_clicks - last_rw_clicks;
+		registers.v.rw_cps = (byte)(cps < 255 ? cps : 255);
+		speed_change = true;
+	}
+	last_rw_clicks = rw_clicks;
+
+	/////////////////////////////////////////////////
+	// ADJUST PWM TO TRY AND ATTAIN DESIRED SPEED
+	////////////////////////////////////////////////
+
+	if (registers.v.lw_cps < registers.v.lw_speed && registers.v.lw_pwm < 255) {
+		Serial.println("Increasing PWM");
+		registers.v.lw_pwm += 1;
+		speed_change = true;
+	} else if (registers.v.lw_cps > registers.v.lw_speed && registers.v.lw_pwm > 0) {
+		Serial.println("Decreasing PWM");
+		registers.v.lw_pwm -= 1;
+		speed_change = true;
+	}
+
+	if (registers.v.rw_cps < registers.v.rw_speed && registers.v.rw_pwm < 255) {
+		registers.v.rw_pwm++;
+		speed_change = true;
+	} else if (registers.v.rw_cps > registers.v.rw_speed && registers.v.rw_pwm > 0) {
+		registers.v.rw_pwm--;
+		speed_change = true;
+	}
+
+	////////////////////
+	// SET PIN VALUES
+	////////////////////
+
+	digitalWrite(registers.v.lw_dir ? 6 : 5, LOW);
+	if (registers.v.lw_speed > 0)
+		analogWrite(registers.v.lw_dir ? 5 : 6, registers.v.lw_pwm);
+	else
+		digitalWrite(registers.v.lw_dir ? 5 : 6, LOW);
+
+	digitalWrite(registers.v.rw_dir ? 10 : 9, LOW);
+	if (registers.v.rw_speed > 0)
+		analogWrite(registers.v.rw_dir ? 9 : 10, registers.v.rw_pwm);
+	else
+		digitalWrite(registers.v.rw_dir ? 9 : 10, LOW);
+
+	///////////////////////////////////////////////////////////
+	// LOG ONLY ONCE PER SECOND AND ONLY IF SPEED HAS CHANGED
+	///////////////////////////////////////////////////////////
+
 	if (loop_count < 10) {
 		loop_count++;
 	} else {
-		bool speed_change = false;
-
-		if (lw_clicks > last_lw_clicks) { // this skips the time when the click counter wraps around
-			registers.v.lw_cps = lw_clicks - last_lw_clicks;
-			speed_change = true;
-		}
-		last_lw_clicks = lw_clicks;
-
-		if (rw_clicks > last_rw_clicks) { // this skips the time when the click counter wraps around
-			registers.v.rw_cps = rw_clicks - last_rw_clicks;
-			speed_change = true;
-		}
-		last_rw_clicks = rw_clicks;
-
-		loop_count = 0;
-
 		if (speed_change) {
-			Serial.print("CPS: LEFT ");
+			Serial.print("CPS/PWM: LEFT ");
 			Serial.print(registers.v.lw_cps);
+			Serial.print("/");
+			Serial.print(lw_pwm);
 			Serial.print(", RIGHT ");
 			Serial.print(registers.v.rw_cps);
+			Serial.print("/");
+			Serial.print(rw_pwm);
+			Serial.println();
+			speed_change = false;
 		}
+		loop_count = 0;
 	}
-	delay(100);
+
+	delay(100);  // thus CPS is actually clicks-per-tenth-of-a-second
 }
