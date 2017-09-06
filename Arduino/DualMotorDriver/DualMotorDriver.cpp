@@ -73,7 +73,6 @@ union Registers {
 volatile unsigned long lw_clicks, rw_clicks;
 
 unsigned long last_lw_clicks, last_rw_clicks;
-int lw_pwm, rw_pwm;
 
 unsigned int loop_count;
 bool speed_change = false;
@@ -173,7 +172,10 @@ void loop() {
 				break;
 			case LW_SPEED_REG:
 				registers.v.lw_speed = write_value;
-				if (write_value == 0) registers.v.lw_pwm = 0;
+				if (write_value == 0) {
+					Serial.println("write_value is 0 so setting PWM to 0");
+					registers.v.lw_pwm = 0;
+				}
 				break;
 			case RW_SPEED_REG:
 				registers.v.rw_speed = write_value;
@@ -215,12 +217,14 @@ void loop() {
 	////////////////////////////////////////////////
 
 	if (registers.v.lw_cps < registers.v.lw_speed && registers.v.lw_pwm < 255) {
-		Serial.println("Increasing PWM");
-		registers.v.lw_pwm += 1;
+		Serial.print("Increasing PWM to ");
+		registers.v.lw_pwm++;
+		Serial.println(registers.v.lw_pwm);
 		speed_change = true;
 	} else if (registers.v.lw_cps > registers.v.lw_speed && registers.v.lw_pwm > 0) {
-		Serial.println("Decreasing PWM");
-		registers.v.lw_pwm -= 1;
+		Serial.print("Decreasing PWM to ");
+		registers.v.lw_pwm--;
+		Serial.println(registers.v.lw_pwm);
 		speed_change = true;
 	}
 
@@ -259,11 +263,11 @@ void loop() {
 			Serial.print("CPS/PWM: LEFT ");
 			Serial.print(registers.v.lw_cps);
 			Serial.print("/");
-			Serial.print(lw_pwm);
+			Serial.print(registers.v.lw_pwm);
 			Serial.print(", RIGHT ");
 			Serial.print(registers.v.rw_cps);
 			Serial.print("/");
-			Serial.print(rw_pwm);
+			Serial.print(registers.v.rw_pwm);
 			Serial.println();
 			speed_change = false;
 		}
