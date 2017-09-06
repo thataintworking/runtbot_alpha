@@ -1,5 +1,0 @@
-RPi.GPIO
-gpiozero
-smbus2
-redis
-click
