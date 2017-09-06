@@ -1,10 +1,10 @@
 # runtbot
 This is the code for a little robot I am working that will
-randomly move around the house. It is intendd to be a 
+randomly move around the house. It is intended to be a 
 learning exercise more than anything.
 
 I am in the process if offloading the motor drive process
-to a 5v ATtiny84.
+to an ATmega328.
 
 ---
 
